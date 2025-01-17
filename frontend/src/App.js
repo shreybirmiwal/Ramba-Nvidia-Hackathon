@@ -6,6 +6,7 @@ function App() {
   const [audioSrc, setAudioSrc] = useState("");
   const [mode, setMode] = useState("Idle"); // State to track Idle or Speaking mode
   const [documents, setDocuments] = useState("");
+  const [llmOut, setllmOut] = useState("")
   // Speech recognition setup
   const {
     transcript,
@@ -29,6 +30,7 @@ function App() {
           // 1. Query LLM with meeting documents and ask it to answer
           //const documents = document.getElementById("documents").value || "";
           console.log(documents)
+
           const llmResponse = await fetch("http://127.0.0.1:5000/query-llm", {
             method: "POST",
             headers: {
@@ -43,14 +45,17 @@ function App() {
             throw new Error(`LLM API failed with status ${llmResponse.status}`);
           }
 
-          const llmData = await llmResponse.json();
+          const llmData = await llmResponse.json().response;
+
+          console.log(llmData)
+          setllmOut(llmData)
 
           // Validate LLM response
           if (!llmData || !llmData.response) {
             throw new Error("Invalid LLM response");
           }
 
-          console.log("LLM Response:", llmData.response);
+          console.log("LLM Response:", llmData);
 
           // 2. Generate voice output for the LLM's response
           const voiceResponse = await fetch("http://127.0.0.1:5000/generate-audio", {
@@ -99,6 +104,7 @@ function App() {
 
     const agenda = document.getElementById("agenda").value;
 
+
     try {
       // Fetch LLM response
       const llmResponse = await fetch("http://127.0.0.1:5000/query-llm", {
@@ -116,6 +122,7 @@ function App() {
       }
 
       const llmData = await llmResponse.json();
+
 
       // Validate LLM response
       if (!llmData || !llmData.response) {
@@ -241,6 +248,7 @@ function App() {
             className="w-full h-20 px-4 py-2 bg-black text-green-400 border border-green-400 rounded"
             placeholder="Live transcript will appear here..."
           ></textarea>
+          <h1> {llmOut}</h1>
 
           {/* Speech recognition controls */}
           <div className="flex space-x-2 mt-4">
