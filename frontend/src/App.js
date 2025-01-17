@@ -5,7 +5,7 @@ function App() {
   const [meetingStarted, setMeetingStarted] = useState(false);
   const [audioSrc, setAudioSrc] = useState("");
   const [mode, setMode] = useState("Idle"); // State to track Idle or Speaking mode
-
+  const [documents, setDocuments] = useState("");
   // Speech recognition setup
   const {
     transcript,
@@ -15,17 +15,79 @@ function App() {
   } = useSpeechRecognition();
 
   // Function to check for the keyword "ramba"
-  const checkForKeyword = () => {
-    if ((transcript.toLowerCase().includes("ramba")) || (transcript.toLowerCase().includes("rumba")) || (transcript.toLowerCase().includes("ramba"))) {
-      console.log("ALERT: 'ramba' detected!");
+  const checkForKeyword = async () => {
+    // Check if the transcript contains "ramba", "rumba", or "rambo"
+    if (transcript != null) {
+      if (
+        transcript.toLowerCase().includes("ramba") ||
+        transcript.toLowerCase().includes("rumba") ||
+        transcript.toLowerCase().includes("rambo")
+      ) {
+        console.log("ALERT: 'ramba' detected!");
 
-      //1 query LLM given meeting documents and ask it to answer. 
-      //2 answer question and do voice output
-      //3 make sure to update the mode 
+        try {
+          // 1. Query LLM with meeting documents and ask it to answer
+          //const documents = document.getElementById("documents").value || "";
+          console.log(documents)
+          const llmResponse = await fetch("http://127.0.0.1:5000/query-llm", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              query: `Given the following meeting documents: ${documents}, answer the user's question., ${transcript}`,
+            }),
+          });
 
-      resetTranscript()
+          if (!llmResponse.ok) {
+            throw new Error(`LLM API failed with status ${llmResponse.status}`);
+          }
+
+          const llmData = await llmResponse.json();
+
+          // Validate LLM response
+          if (!llmData || !llmData.response) {
+            throw new Error("Invalid LLM response");
+          }
+
+          console.log("LLM Response:", llmData.response);
+
+          // 2. Generate voice output for the LLM's response
+          const voiceResponse = await fetch("http://127.0.0.1:5000/generate-audio", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ text: llmData.response }),
+          });
+
+          if (!voiceResponse.ok) {
+            throw new Error(`Audio API failed with status ${voiceResponse.status}`);
+          }
+
+          const audioBlob = await voiceResponse.blob();
+
+          // Validate audio blob
+          if (!audioBlob.size) {
+            throw new Error("Audio generation failed");
+          }
+
+          // Create and play audio
+          const audioUrl = URL.createObjectURL(audioBlob);
+          setAudioSrc(audioUrl);
+
+          // 3. Update mode to Speaking and play the audio
+          playAudio(audioUrl);
+        } catch (error) {
+          console.error("Error handling keyword detection:", error);
+        }
+
+        // Reset the transcript after processing
+        resetTranscript();
+      }
     }
   };
+
 
   // Monitor transcript for changes and check for the keyword
   useEffect(() => {
@@ -141,9 +203,12 @@ function App() {
               <input
                 type="text"
                 id="documents"
+                value={documents}
+                onChange={(e) => setDocuments(e.target.value)}
                 className="mt-1 w-full px-4 py-2 bg-black text-green-400 border border-green-400 rounded"
-                placeholder="Enter document links"
+                placeholder="Enter relavent data here"
               />
+
             </div>
             <div className="h-40 bg-green-900 border-2 border-green-400 rounded flex items-center justify-center">
               <p>Space for an image</p>
