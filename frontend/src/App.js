@@ -4,6 +4,7 @@ function App() {
   const [meetingStarted, setMeetingStarted] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [audioSrc, setAudioSrc] = useState("");
+  const [mode, setMode] = useState("Idle"); // State to track Idle or Speaking mode
 
   const handleStartMeeting = async () => {
     setMeetingStarted(true);
@@ -17,7 +18,9 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: `Do not include any intro or any noise in your input. DO not start with any Llm noise, just give answer. Create a short meeting intro for: ${agenda} ` }),
+        body: JSON.stringify({
+          query: `Do not include any intro or any noise in your input. DO not start with any Llm noise, just give answer. Create a short meeting intro for: ${agenda} `,
+        }),
       });
 
       if (!llmResponse.ok) {
@@ -54,24 +57,41 @@ function App() {
       // Create and play audio
       const audioUrl = URL.createObjectURL(audioBlob);
       setAudioSrc(audioUrl);
-      new Audio(audioUrl).play();
+      playAudio(audioUrl); // Play the audio and manage mode state
     } catch (error) {
       console.error("Error starting the meeting:", error);
     }
   };
 
+  const playAudio = (audioUrl) => {
+    const audio = new Audio(audioUrl);
+    setMode("Speaking"); // Switch to Speaking mode when audio starts playing
+
+    audio.play();
+
+    audio.onended = () => {
+      setMode("Idle"); // Switch back to Idle mode when audio ends
+    };
+  };
 
   const handleEndMeeting = () => {
     setMeetingStarted(false);
     setTranscript("");
+    setMode("Idle"); // Reset mode to Idle when meeting ends
   };
+
+  // Determine the video source based on the current mode
+  const videoSource =
+    mode === "Speaking" ? "/video1.mp4" : "/video2.mp4"; // Replace with actual video paths
 
   return (
     <div className="min-h-screen bg-black text-green-400 flex flex-col items-center justify-center">
       {!meetingStarted ? (
         <div className="w-4/5 max-w-xl">
           <h1 className="text-6xl font-bold text-center mb-4">ramba.</h1>
-          <p className="text-center text-lg mb-8">The AI Agent That Leads Work Meetings</p>
+          <p className="text-center text-lg mb-8">
+            The AI Agent That Leads Work Meetings
+          </p>
           <div className="flex flex-col space-y-4">
             <div>
               <label htmlFor="agenda" className="block text-sm font-medium">
@@ -108,16 +128,26 @@ function App() {
         </div>
       ) : (
         <div className="w-full max-w-4xl">
-          <div className="h-96 bg-green-900 border-2 border-green-400 rounded mb-4 flex items-center justify-center">
-            <p>Video Placeholder</p>
+          {/* Video element that changes based on the mode */}
+          <div className="h-96 bg-green-900 border-2 border-green-400 rounded mb-4">
+            <video key={videoSource} autoPlay muted loop className="w-full h-full">
+              <source src={videoSource} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
-          {<audio src={audioSrc} />}
+
+          {/* Audio element */}
+          {audioSrc && <audio src={audioSrc} />}
+
+          {/* Transcript area */}
           <textarea
             value={transcript}
             onChange={(e) => setTranscript(e.target.value)}
             className="w-full h-10 px-4 py-2 bg-black text-green-400 border border-green-400 rounded"
             placeholder="Live transcript will appear here..."
           ></textarea>
+
+          {/* End Meeting button */}
           <button
             onClick={handleEndMeeting}
             className="mt-4 w-full px-4 py-2 bg-red-600 text-white font-semibold rounded hover:bg-red-700"
