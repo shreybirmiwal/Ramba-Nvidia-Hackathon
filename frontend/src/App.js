@@ -1,10 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 
 function App() {
   const [meetingStarted, setMeetingStarted] = useState(false);
-  const [transcript, setTranscript] = useState("");
   const [audioSrc, setAudioSrc] = useState("");
   const [mode, setMode] = useState("Idle"); // State to track Idle or Speaking mode
+
+  // Speech recognition setup
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition,
+  } = useSpeechRecognition();
+
+  // Function to check for the keyword "ramba"
+  const checkForKeyword = () => {
+    if (transcript.toLowerCase().includes("ramba")) {
+      console.log("ALERT: 'ramba' detected!");
+    }
+  };
+
+  // Monitor transcript for changes and check for the keyword
+  useEffect(() => {
+    checkForKeyword();
+  }, [transcript]);
 
   const handleStartMeeting = async () => {
     setMeetingStarted(true);
@@ -76,13 +96,17 @@ function App() {
 
   const handleEndMeeting = () => {
     setMeetingStarted(false);
-    setTranscript("");
+    resetTranscript(); // Reset speech recognition transcript
     setMode("Idle"); // Reset mode to Idle when meeting ends
   };
 
   // Determine the video source based on the current mode
   const videoSource =
     mode === "Speaking" ? "/video1.mp4" : "/video2.mp4"; // Replace with actual video paths
+
+  if (!browserSupportsSpeechRecognition) {
+    return <div>Your browser does not support speech recognition.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-black text-green-400 flex flex-col items-center justify-center">
@@ -142,10 +166,35 @@ function App() {
           {/* Transcript area */}
           <textarea
             value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-            className="w-full h-10 px-4 py-2 bg-black text-green-400 border border-green-400 rounded"
+            readOnly
+            className="w-full h-20 px-4 py-2 bg-black text-green-400 border border-green-400 rounded"
             placeholder="Live transcript will appear here..."
           ></textarea>
+
+          {/* Speech recognition controls */}
+          <div className="flex space-x-2 mt-4">
+            <button
+              onClick={() =>
+                SpeechRecognition.startListening({ continuous: true })
+              }
+              className={`px-4 py-2 ${listening ? "bg-gray-500" : "bg-green-400"
+                } text-black font-semibold rounded hover:bg-green-500`}
+            >
+              {listening ? "Listening..." : "Start Listening"}
+            </button>
+            <button
+              onClick={SpeechRecognition.stopListening}
+              className="px-4 py-2 bg-yellow-400 text-black font-semibold rounded hover:bg-yellow-500"
+            >
+              Stop Listening
+            </button>
+            <button
+              onClick={resetTranscript}
+              className="px-4 py-2 bg-red-600 text-white font-semibold rounded hover:bg-red-700"
+            >
+              Reset Transcript
+            </button>
+          </div>
 
           {/* End Meeting button */}
           <button
