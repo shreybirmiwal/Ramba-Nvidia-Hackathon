@@ -64,11 +64,14 @@ def generate_audio():
 
 @app.route('/query-llm', methods=['POST'])
 def query_llm():
+
     try:
         data = request.json
         query = data.get("query")
+        print("GOT QUYERY ", query)
 
         # Send the query to the NVIDIA LLM API
+        
         completion = client.chat.completions.create(
             model="meta/llama-3.1-405b-instruct",
             messages=[{"role": "user", "content": query}],
@@ -78,8 +81,13 @@ def query_llm():
             stream=False
         )
 
+        print("HERE WAITING FOR COMPLETION ")
+        print(completion)
+        
+
         # Extract the response from the completion
         response = completion.choices[0].message.content
+
         print("response", response)
 
         # Return the response as JSON
