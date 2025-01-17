@@ -16,8 +16,14 @@ function App() {
 
   // Function to check for the keyword "ramba"
   const checkForKeyword = () => {
-    if (transcript.toLowerCase().includes("ramba")) {
+    if ((transcript.toLowerCase().includes("ramba")) || (transcript.toLowerCase().includes("rumba")) || (transcript.toLowerCase().includes("ramba"))) {
       console.log("ALERT: 'ramba' detected!");
+
+      //1 query LLM given meeting documents and ask it to answer. 
+      //2 answer question and do voice output
+      //3 make sure to update the mode 
+
+      resetTranscript()
     }
   };
 
