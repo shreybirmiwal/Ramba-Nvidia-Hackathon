@@ -3,11 +3,44 @@ import React, { useState } from "react";
 function App() {
   const [meetingStarted, setMeetingStarted] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [audioSrc, setAudioSrc] = useState("");
 
-  const handleStartMeeting = () => setMeetingStarted(true);
+  const handleStartMeeting = async () => {
+    setMeetingStarted(true);
+
+    const agenda = document.getElementById("agenda").value;
+
+    try {
+      const llmResponse = await fetch("http://127.0.0.1:5000/query-llm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ query: `Create a meeting intro for: ${agenda}` })
+      });
+      const llmData = await llmResponse.json();
+
+      const voiceResponse = await fetch("http://127.0.0.1:5000/generate-audio", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text: llmData.response })
+      });
+
+      const audioBlob = await voiceResponse.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      setAudioSrc(audioUrl);
+      new Audio(audioUrl).play();
+
+    } catch (error) {
+      console.error("Error starting the meeting:", error);
+    }
+  }
+
   const handleEndMeeting = () => {
     setMeetingStarted(false);
-    setTranscript(""); // Clear the transcript when ending the meeting
+    setTranscript("");
   };
 
   return (
@@ -55,6 +88,7 @@ function App() {
           <div className="h-96 bg-green-900 border-2 border-green-400 rounded mb-4 flex items-center justify-center">
             <p>Video Placeholder</p>
           </div>
+          <audio controls src={audioSrc}></audio>
           <textarea
             value={transcript}
             onChange={(e) => setTranscript(e.target.value)}
