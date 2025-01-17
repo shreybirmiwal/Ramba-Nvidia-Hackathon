@@ -11,32 +11,55 @@ function App() {
     const agenda = document.getElementById("agenda").value;
 
     try {
+      // Fetch LLM response
       const llmResponse = await fetch("http://127.0.0.1:5000/query-llm", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: `Create a meeting intro for: ${agenda}` })
+        body: JSON.stringify({ query: `Do not include any intro or any noise in your input. DO not start with any Llm noise, just give answer. Create a short meeting intro for: ${agenda} ` }),
       });
+
+      if (!llmResponse.ok) {
+        throw new Error(`LLM API failed with status ${llmResponse.status}`);
+      }
+
       const llmData = await llmResponse.json();
 
+      // Validate LLM response
+      if (!llmData || !llmData.response) {
+        throw new Error("Invalid LLM response");
+      }
+
+      // Fetch audio generation
       const voiceResponse = await fetch("http://127.0.0.1:5000/generate-audio", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: llmData.response })
+        body: JSON.stringify({ text: llmData.response }),
       });
 
+      if (!voiceResponse.ok) {
+        throw new Error(`Audio API failed with status ${voiceResponse.status}`);
+      }
+
       const audioBlob = await voiceResponse.blob();
+
+      // Validate audio blob
+      if (!audioBlob.size) {
+        throw new Error("Audio generation failed");
+      }
+
+      // Create and play audio
       const audioUrl = URL.createObjectURL(audioBlob);
       setAudioSrc(audioUrl);
       new Audio(audioUrl).play();
-
     } catch (error) {
       console.error("Error starting the meeting:", error);
     }
-  }
+  };
+
 
   const handleEndMeeting = () => {
     setMeetingStarted(false);
@@ -88,7 +111,7 @@ function App() {
           <div className="h-96 bg-green-900 border-2 border-green-400 rounded mb-4 flex items-center justify-center">
             <p>Video Placeholder</p>
           </div>
-          <audio controls src={audioSrc}></audio>
+          {<audio src={audioSrc} />}
           <textarea
             value={transcript}
             onChange={(e) => setTranscript(e.target.value)}
