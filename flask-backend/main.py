@@ -1,8 +1,9 @@
 
 
 
-
-
+from gtts import gTTS
+import os
+from io import BytesIO
 
 from openai import OpenAI
 from flask import Flask, request, send_file, jsonify
@@ -21,6 +22,45 @@ client = OpenAI(
 
 @app.route('/generate-audio', methods=['POST'])
 def generate_audio():
+
+    try:
+        # Parse JSON data from the request
+        data = request.json
+        if not data or "text" not in data:
+            return jsonify({"error": "Missing 'text' in request body"}), 400
+        
+        text = data.get("text")
+        
+        # Validate input text
+        if not text.strip():
+            return jsonify({"error": "Text cannot be empty"}), 400
+        
+        # Generate TTS audio using gTTS
+        tts = gTTS(text)
+        
+        # Save the audio to a BytesIO stream (in-memory file)
+        audio_stream = BytesIO()
+        tts.write_to_fp(audio_stream)
+        audio_stream.seek(0)  # Reset stream position to the beginning
+
+        # Return the audio file as a response
+        return send_file(
+            audio_stream,
+            mimetype="audio/mpeg",
+            as_attachment=True,
+            download_name="output.mp3"
+        )
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+
+    ## #BLWOI CODE NOT WORKING
+    ## DNS resolution failed for grpc.nvcf.nvidia.com:443: C-ares status is not ARES_SUCCESS qtype=AAAA name=grpc.nvcf.nvidia.com is_balancer=0: Could not contact DNS servers
+
     try:
         data = request.json
         text = data.get("text")
@@ -36,10 +76,7 @@ def generate_audio():
             "python3", "python-clients/scripts/tts/talk.py",
             "--server", "grpc.nvcf.nvidia.com:443",
             "--use-ssl",
-           # "--metadata", "function-id", "0149dedb-2be8-4195-b9a0-e57e0e14f972",
-            "--metadata", "function-id", "5e607c81-7aa6-44ce-a11d-9e08f0a3fe49",
-
-           # "--metadata", "authorization", "Bearer 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",
+            "--metadata", "function-id",  "0149dedb-2be8-4195-b9a0-e57e0e14f972",
             "--metadata", "authorization", f"Bearer {os.getenv('NVIDIA_API_KEY')}",
 
             "--text", text,
