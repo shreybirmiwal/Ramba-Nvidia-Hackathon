@@ -170,7 +170,7 @@ function App() {
 
   // Determine the video source based on the current mode
   const videoSource =
-    mode === "Speaking" ? "/video1.mp4" : "/video2.mp4"; // Replace with actual video paths
+    mode === "Speaking" ? "/video2.mov" : "/video1.mov"; // Replace with actual video paths
 
   if (!browserSupportsSpeechRecognition) {
     return <div>Your browser does not support speech recognition.</div>;
