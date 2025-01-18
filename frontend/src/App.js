@@ -26,66 +26,68 @@ function App() {
       ) {
         console.log("ALERT: 'ramba' detected!");
 
-        try {
-          // 1. Query LLM with meeting documents and ask it to answer
-          //const documents = document.getElementById("documents").value || "";
-          console.log(documents)
+        //try {
+        // 1. Query LLM with meeting documents and ask it to answer
+        //const documents = document.getElementById("documents").value || "";
+        console.log(documents)
 
-          const llmResponse = await fetch("http://127.0.0.1:5000/query-llm", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              query: `Given the following meeting documents: ${documents}, answer the user's question., ${transcript}`,
-            }),
-          });
+        const llmResponse = await fetch("http://127.0.0.1:5000/query-llm", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: ` You are in a meeting acting as an empoyee who's name is Ramba. do not answer with any fluff, just give the short sweet answer and move on, no need to ramble about things.Given the following meeting documents: ${documents}, answer the user's question., ${transcript}`,
+          }),
+        });
 
-          if (!llmResponse.ok) {
-            throw new Error(`LLM API failed with status ${llmResponse.status}`);
-          }
-
-          const llmData = await llmResponse.json().response;
-
-          console.log(llmData)
-          setllmOut(llmData)
-
-          // Validate LLM response
-          if (!llmData || !llmData.response) {
-            throw new Error("Invalid LLM response");
-          }
-
-          console.log("LLM Response:", llmData);
-
-          // 2. Generate voice output for the LLM's response
-          const voiceResponse = await fetch("http://127.0.0.1:5000/generate-audio", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ text: llmData.response }),
-          });
-
-          if (!voiceResponse.ok) {
-            throw new Error(`Audio API failed with status ${voiceResponse.status}`);
-          }
-
-          const audioBlob = await voiceResponse.blob();
-
-          // Validate audio blob
-          if (!audioBlob.size) {
-            throw new Error("Audio generation failed");
-          }
-
-          // Create and play audio
-          const audioUrl = URL.createObjectURL(audioBlob);
-          setAudioSrc(audioUrl);
-
-          // 3. Update mode to Speaking and play the audio
-          playAudio(audioUrl);
-        } catch (error) {
-          console.error("Error handling keyword detection:", error);
+        if (!llmResponse.ok) {
+          throw new Error(`LLM API failed with status ${llmResponse.status}`);
         }
+
+        const llmData = await llmResponse.json();
+        var res = llmData.response
+
+        console.log("LLM DATA SHOUDL BE HERE ", res)
+        console.log(res)
+        setllmOut(res)
+
+        // Validate LLM response
+        if (!llmData || !llmData.response) {
+          throw new Error("Invalid LLM response");
+        }
+
+        console.log("LLM Response:", res);
+
+        // 2. Generate voice output for the LLM's response
+        const voiceResponse = await fetch("http://127.0.0.1:5000/generate-audio", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: res }),
+        });
+
+        if (!voiceResponse.ok) {
+          throw new Error(`Audio API failed with status ${voiceResponse.status}`);
+        }
+
+        const audioBlob = await voiceResponse.blob();
+
+        // Validate audio blob
+        if (!audioBlob.size) {
+          throw new Error("Audio generation failed");
+        }
+
+        // Create and play audio
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setAudioSrc(audioUrl);
+
+        // 3. Update mode to Speaking and play the audio
+        playAudio(audioUrl);
+        // } catch (error) {
+        //   console.error("Error handling keyword detection:", error);
+        // }
 
         // Reset the transcript after processing
         resetTranscript();
@@ -246,7 +248,7 @@ function App() {
             className="w-full h-20 px-4 py-2 bg-black text-green-400 border border-green-400 rounded"
             placeholder="Live transcript will appear here..."
           ></textarea>
-          <h1> {llmOut}</h1>
+          {/* <h1> {llmOut}</h1> */}
 
           {/* Speech recognition controls */}
           <div className="flex space-x-2 mt-4">

@@ -10,8 +10,13 @@ from flask import Flask, request, send_file, jsonify
 import subprocess
 import os
 from dotenv import load_dotenv
+from flask_cors import CORS
+
+
+
 load_dotenv()
 app = Flask(__name__)
+CORS(app=app)
 
 # Initialize the OpenAI client for NVIDIA API
 client = OpenAI(
@@ -101,7 +106,7 @@ def generate_audio():
 
 @app.route('/query-llm', methods=['POST'])
 def query_llm():
-
+    
     try:
         data = request.json
         query = data.get("query")
@@ -112,9 +117,9 @@ def query_llm():
         completion = client.chat.completions.create(
             model="meta/llama-3.1-405b-instruct",
             messages=[{"role": "user", "content": query}],
-            temperature=0.2,
+            temperature=0.1,
             top_p=0.7,
-            max_tokens=1024,
+            max_tokens=300,
             stream=False
         )
 
