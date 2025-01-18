@@ -177,7 +177,7 @@ function App() {
 
   // Determine the video source based on the current mode
   const videoSource =
-    mode === "Speaking" ? "/video2.mov" : "/video1.mov"; // Replace with actual video paths
+    mode === "Speaking" ? "/speaking.mp4" : "/idle.mp4"; // Replace with actual video paths
 
   if (!browserSupportsSpeechRecognition) {
     return <div>Your browser does not support speech recognition.</div>;
@@ -217,9 +217,7 @@ function App() {
               />
 
             </div>
-            <div className="h-40 bg-green-900 border-2 border-green-400 rounded flex items-center justify-center">
-              <p>Space for an image</p>
-            </div>
+            <img src="banner.png" className=" bg-green-900 border-2 border-green-400 rounded flex items-center justify-center"></img>
             <button
               onClick={handleStartMeeting}
               className="w-full px-4 py-2 bg-green-400 text-black font-semibold rounded hover:bg-green-500"
